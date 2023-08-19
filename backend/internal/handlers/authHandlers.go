@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"bitbucket.org/vatsal64/va_pa/config"
 	"bitbucket.org/vatsal64/va_pa/internal/helpers"
@@ -101,7 +102,22 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("profile"))
+	token := strings.Split(r.Header.Get("Authorization"), " ")[1]
+	claims, err := helpers.ExtractClaims(token)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user := helpers.GetUserByID(claims.UserID)
+	body, err := json.Marshal(user)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte(body))
 }
 
 func EditProfileHandler(w http.ResponseWriter, r *http.Request) {
