@@ -25,6 +25,24 @@ func ValidateLogin(username, password string) (models.User, error) {
 	return user, nil
 }
 
+func RegisterUser(username, password string) (models.User, error) {
+	db := storage.GetMySQLDatabase()
+
+	var user models.User
+	res, err := db.Exec("INSERT INTO users (username, password) VALUES (?, ?);", username, password)
+	if err != nil {
+		return user, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return user, err
+	}
+
+	user.ID = int(id)
+	return user, nil
+}
+
 func GenerateToken(user models.User) (string, error) {
 	key := []byte(os.Getenv("JWT_SECRET"))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
