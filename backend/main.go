@@ -6,7 +6,11 @@ import (
 	"net/http"
 	"os"
 
+	"bitbucket.org/vatsal64/va_pa/config"
+	"bitbucket.org/vatsal64/va_pa/internal/routes"
+	"bitbucket.org/vatsal64/va_pa/pkg/storage"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/joho/godotenv"
 )
 
@@ -16,12 +20,15 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	config.InitGoogleOAuth()
+	storage.GetMySQLDatabase()
+
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	routes.Configure(r)
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("welcome"))
-	})
-
+	log.Println("Starting server")
 	PORT := os.Getenv("PORT")
-	http.ListenAndServe(fmt.Sprintf(":%v", PORT), r)
+	http.ListenAndServe(fmt.Sprintf("localhost:%v", PORT), r)
 }

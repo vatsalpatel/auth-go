@@ -15,7 +15,7 @@ var (
 )
 
 // NewDatabase initializes and returns a new Database instance.
-func NewDatabase() *sql.DB {
+func GetMySQLDatabase() *sql.DB {
 	once.Do(func() {
 		// Open a new database connection
 		MYSQL_URI := os.Getenv("MYSQL_URI")
