@@ -25,11 +25,11 @@ func ValidateLogin(username, password string) (models.User, error) {
 	return user, nil
 }
 
-func RegisterUser(username, password string) (models.User, error) {
+func RegisterUser(username, password, name, email, phone string) (models.User, error) {
 	db := storage.GetMySQLDatabase()
 
 	var user models.User
-	res, err := db.Exec("INSERT INTO users (username, password) VALUES (?, ?);", username, password)
+	res, err := db.Exec("INSERT INTO users (username, password, name, email, phone) VALUES (?, ?, ?, ?, ?);", username, password, name, email, phone)
 	if err != nil {
 		return user, err
 	}
