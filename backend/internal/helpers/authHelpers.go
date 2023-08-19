@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -9,11 +10,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Claims struct {
+type MyClaims struct {
 	UserID   int    `json:"userID"`
 	Username string `json:"username"`
-	exp      int64
-	iat      int64
+	jwt.RegisteredClaims
 }
 
 func ValidateLogin(username, password string) (models.User, error) {
@@ -48,8 +48,14 @@ func GenerateToken(user models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID":   user.ID,
 		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * 24 * 10).Unix(),
-		"iat":      time.Now().Unix(),
+	})
+	jwt.NewWithClaims(jwt.SigningMethodHS256, MyClaims{
+		UserID:   user.ID,
+		Username: user.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	})
 
 	signed, err := token.SignedString(key)
@@ -60,13 +66,22 @@ func GenerateToken(user models.User) (string, error) {
 	return signed, nil
 }
 
-func ExtractClaims(token string) (jwt.Claims, error) {
+func ExtractClaims(token string) (MyClaims, error) {
 	key := []byte(os.Getenv("JWT_SECRET"))
-	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	var claims MyClaims
+	_, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
 		return key, nil
 	})
 	if err != nil {
-		return nil, err
+		return MyClaims{}, err
 	}
-	return parsed.Claims, nil
+	log.Println(claims)
+	return claims, nil
+}
+
+func GetUserByID(userId int) models.User {
+	db := storage.GetMySQLDatabase()
+	var user models.User
+	db.QueryRow("SELECT * FROM users WHERE id = ?", userId).Scan(&user.ID, &user.Username, &user.Password, &user.Name, &user.Email, &user.Phone, &user.CreatedAt, &user.UpdatedAt)
+	return user
 }
