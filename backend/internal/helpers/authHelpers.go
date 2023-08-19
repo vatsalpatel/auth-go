@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"errors"
 	"log"
 	"os"
 	"time"
@@ -84,4 +85,22 @@ func GetUserByID(userId int) models.User {
 	var user models.User
 	db.QueryRow("SELECT * FROM users WHERE id = ?", userId).Scan(&user.ID, &user.Username, &user.Password, &user.Name, &user.Email, &user.Phone, &user.CreatedAt, &user.UpdatedAt)
 	return user
+}
+
+func UpdateUserByID(userId int, name, email, phone string) error {
+	db := storage.GetMySQLDatabase()
+	res, err := db.Exec("UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?", name, email, phone, userId)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return errors.New("unable to update user")
+	}
+
+	return nil
 }

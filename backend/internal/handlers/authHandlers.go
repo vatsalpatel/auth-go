@@ -9,6 +9,7 @@ import (
 
 	"bitbucket.org/vatsal64/va_pa/config"
 	"bitbucket.org/vatsal64/va_pa/internal/helpers"
+	"bitbucket.org/vatsal64/va_pa/internal/models"
 	"golang.org/x/oauth2"
 )
 
@@ -121,7 +122,34 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditProfileHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("edit profile"))
+	var reqData models.User
+	json.NewDecoder(r.Body).Decode(&reqData)
+	log.Println(reqData)
+
+	token := strings.Split(r.Header.Get("Authorization"), " ")[1]
+	claims, err := helpers.ExtractClaims(token)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	reqData.ID = claims.UserID
+	err = helpers.UpdateUserByID(reqData.ID, reqData.Name, reqData.Email, reqData.Phone)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user := helpers.GetUserByID(claims.UserID)
+	body, err := json.Marshal(user)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(body)
 }
 
 func GetGoogleLoginURLHandler(w http.ResponseWriter, r *http.Request) {
