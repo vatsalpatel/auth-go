@@ -25,5 +25,5 @@ func main() {
 
 	log.Println("Starting server")
 	PORT := os.Getenv("PORT")
-	http.ListenAndServe(fmt.Sprintf("localhost:%v", PORT), r)
+	http.ListenAndServe(fmt.Sprintf(":%v", PORT), r)
 }
