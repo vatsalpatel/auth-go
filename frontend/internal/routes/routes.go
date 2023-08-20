@@ -7,6 +7,8 @@ import (
 )
 
 func Configure(r *chi.Mux) {
+	r.Get("/", handlers.RootHandler)
+
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RedirectMiddleware)
 

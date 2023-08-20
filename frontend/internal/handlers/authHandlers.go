@@ -13,6 +13,10 @@ import (
 	"bitbucket.org/vatsal64/frontend/internal/models"
 )
 
+func RootHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("templates/login.html")
 	if err != nil {
