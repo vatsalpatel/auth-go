@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"bitbucket.org/vatsal64/va_pa/config"
@@ -228,5 +229,6 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		Value: access_token,
 		Path:  "/",
 	})
-	http.Redirect(w, r, "http://localhost:5000/profile", http.StatusFound)
+	FRONTEND_URI := os.Getenv("FRONTEND_URI")
+	http.Redirect(w, r, FRONTEND_URI+"/profile", http.StatusFound)
 }
