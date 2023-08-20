@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Signup</h2>
+        <p>{{.Error}}</p>
+        <form action="/signup" method="POST">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <button type="submit">Signup</button>
+            </div>
+        </form>
+    </div>
+    <div class="container">
+        <a href="/login/google">Signup with Google</a>
+    </div>
+    <div class="container">
+        <a href="/login">Login</a>
+    </div>
+</body>
+</html>

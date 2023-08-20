@@ -13,9 +13,17 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 
 		// Extract the JWT token from the Authorization header
-		tokenString := r.Header.Get("Authorization")
+		cookies := r.Cookies()
+		var tokenString string
+
+		for _, cookie := range cookies {
+			if cookie.Name == "access_token" {
+				tokenString = cookie.Value
+			}
+		}
+
 		if tokenString == "" {
-			http.Error(w, "Missing Authorization Header", http.StatusUnauthorized)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 

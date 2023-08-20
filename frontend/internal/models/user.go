@@ -7,6 +7,4 @@ type User struct {
 	Name         string `json:"name"`
 	Phone        string `json:"phone"`
 	IsGoogleUser bool   `json:"isGoogleUser"`
-	CreatedAt    string `json:"createdAt"`
-	UpdatedAt    string `json:"updatedAt"`
 }

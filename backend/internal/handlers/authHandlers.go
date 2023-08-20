@@ -20,18 +20,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var reqData map[string]string
 	json.Unmarshal(body, &reqData)
 
-	username, ok := reqData["username"]
+	email, ok := reqData["email"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid username"}`))
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid email")))
 		return
 	}
 	password, ok := reqData["password"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid password"}`))
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid password")))
 		return
 	}
 
-	user, err := helpers.ValidateLogin(username, password)
+	user, err := helpers.ValidateLogin(email, password)
 	if err != nil {
 		log.Println(err)
 		w.Write([]byte(err.Error()))
@@ -39,7 +39,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user.ID == 0 {
-		w.Write([]byte(`{"error": "username or password is incorrect`))
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "email or password is incorrect")))
 		return
 	}
 
@@ -67,21 +67,21 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 	var reqData map[string]string
 	json.Unmarshal(body, &reqData)
 
-	username, ok := reqData["username"]
+	email, ok := reqData["email"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid username"}`))
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid email")))
 		return
 	}
 	password, ok := reqData["password"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid password"}`))
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid password")))
 		return
 	}
 
-	user, err := helpers.RegisterUser(username, password, "", "", "")
+	user, err := helpers.RegisterUser(email, password, "", "", false)
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "Username is already registered")))
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "email is already registered")))
 		return
 	}
 
@@ -118,7 +118,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte(body))
+	w.Write(body)
 }
 
 func EditProfileHandler(w http.ResponseWriter, r *http.Request) {
@@ -152,9 +152,9 @@ func EditProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
-func GetGoogleLoginURLHandler(w http.ResponseWriter, r *http.Request) {
+func GetGoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	url := config.GoogleOauthConfig.AuthCodeURL("", oauth2.AccessTypeOffline)
-	w.Write([]byte(url))
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -181,14 +181,15 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	email := profile["email"].(string)
-	user, err := helpers.ValidateLogin(email, "")
+	user, err := helpers.ValidateGoogleLogin(email)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// User.ID will be 0 if user has not logged in with google before, then register them with email as username
 	if user.ID == 0 {
-		user, err = helpers.RegisterUser(email, "", profile["name"].(string), email, "") // Username is same as email for google login
+		user, err = helpers.RegisterUser(email, "", profile["name"].(string), "", true)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -201,18 +202,11 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:  "access_token",
 		Value: access_token,
+		Path:  "/",
 	})
-
-	responseBody, err := json.Marshal(map[string]interface{}{
-		"message":      "login successful",
-		"access_token": access_token,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write([]byte(responseBody))
+	http.Redirect(w, r, "http://localhost:5000/profile", http.StatusFound)
 }

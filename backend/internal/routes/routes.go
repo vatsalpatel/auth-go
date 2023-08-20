@@ -9,7 +9,7 @@ import (
 func Configure(r *chi.Mux) {
 	r.Post("/api/login", handlers.LoginHandler)
 	r.Post("/api/signup", handlers.SignupHandler)
-	r.Get("/api/google/login/url", handlers.GetGoogleLoginURLHandler)
+	r.Get("/api/google/login", handlers.GetGoogleLoginHandler)
 	r.Get("/api/callback", handlers.GoogleCallbackHandler)
 
 	r.Group(func(r chi.Router) {
