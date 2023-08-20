@@ -1,0 +1,2 @@
+release: go run cmd/migrateDatabase.go
+web: go run main.go
