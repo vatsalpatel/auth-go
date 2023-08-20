@@ -20,32 +20,38 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var reqData map[string]string
 	json.Unmarshal(body, &reqData)
 
-	username, ok := reqData["username"]
+	email, ok := reqData["email"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid username"}`))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid email")))
 		return
 	}
 	password, ok := reqData["password"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid password"}`))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid password")))
 		return
 	}
 
-	user, err := helpers.ValidateLogin(username, password)
+	user, err := helpers.ValidateLogin(email, password)
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "email or password is incorrect")))
 		return
 	}
 
 	if user.ID == 0 {
-		w.Write([]byte(`{"error": "username or password is incorrect`))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "email or password is incorrect")))
 		return
 	}
 
 	token, err := helpers.GenerateToken(user)
 	if err != nil {
 		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
@@ -67,27 +73,32 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 	var reqData map[string]string
 	json.Unmarshal(body, &reqData)
 
-	username, ok := reqData["username"]
+	email, ok := reqData["email"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid username"}`))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid email")))
 		return
 	}
 	password, ok := reqData["password"]
 	if !ok {
-		w.Write([]byte(`{"error": "invalid password"}`))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "invalid password")))
 		return
 	}
 
-	user, err := helpers.RegisterUser(username, password, "", "", "")
+	user, err := helpers.RegisterUser(email, password, "", "", false)
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "Username is already registered")))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, "email is already registered")))
 		return
 	}
 
 	token, err := helpers.GenerateToken(user)
 	if err != nil {
 		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
@@ -107,7 +118,8 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	claims, err := helpers.ExtractClaims(token)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 
@@ -115,22 +127,23 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := json.Marshal(user)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
-	w.Write([]byte(body))
+	w.Write(body)
 }
 
 func EditProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var reqData models.User
 	json.NewDecoder(r.Body).Decode(&reqData)
-	log.Println(reqData)
 
 	token := strings.Split(r.Header.Get("Authorization"), " ")[1]
 	claims, err := helpers.ExtractClaims(token)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 
@@ -138,7 +151,8 @@ func EditProfileHandler(w http.ResponseWriter, r *http.Request) {
 	err = helpers.UpdateUserByID(reqData.ID, reqData.Name, reqData.Email, reqData.Phone)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 
@@ -146,15 +160,16 @@ func EditProfileHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := json.Marshal(user)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 	w.Write(body)
 }
 
-func GetGoogleLoginURLHandler(w http.ResponseWriter, r *http.Request) {
+func GetGoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	url := config.GoogleOauthConfig.AuthCodeURL("", oauth2.AccessTypeOffline)
-	w.Write([]byte(url))
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +183,8 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	client := config.GoogleOauthConfig.Client(r.Context(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 	defer resp.Body.Close()
@@ -176,43 +192,41 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	var profile map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&profile)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
 
 	email := profile["email"].(string)
-	user, err := helpers.ValidateLogin(email, "")
+	user, err := helpers.ValidateGoogleLogin(email)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
+	// User.ID will be 0 if user has not logged in with google before, then register them with email as username
 	if user.ID == 0 {
-		user, err = helpers.RegisterUser(email, "", profile["name"].(string), email, "") // Username is same as email for google login
+		user, err = helpers.RegisterUser(email, "", profile["name"].(string), "", true)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 			return
 		}
 	}
 	access_token, err := helpers.GenerateToken(user)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
 		return
 	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:  "access_token",
 		Value: access_token,
+		Path:  "/",
 	})
-
-	responseBody, err := json.Marshal(map[string]interface{}{
-		"message":      "login successful",
-		"access_token": access_token,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write([]byte(responseBody))
+	http.Redirect(w, r, "http://localhost:5000/profile", http.StatusFound)
 }
