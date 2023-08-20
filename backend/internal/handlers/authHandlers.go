@@ -231,5 +231,5 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		Domain: os.Getenv("COOKIE_DOMAIN"),
 	})
 	FRONTEND_URI := os.Getenv("FRONTEND_URI")
-	http.Redirect(w, r, FRONTEND_URI+"/profile", http.StatusFound)
+	http.Redirect(w, r, FRONTEND_URI+"/login/google/success", http.StatusFound)
 }

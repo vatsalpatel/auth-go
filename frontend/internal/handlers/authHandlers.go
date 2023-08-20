@@ -78,6 +78,10 @@ func GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, os.Getenv("BACKEND_URL")+"/api/google/login", http.StatusSeeOther)
 }
 
+func GoogleLoginSuccessHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/profile", http.StatusSeeOther)
+}
+
 func ServeSignupPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("templates/signup.html")
 	if err != nil {
@@ -147,7 +151,6 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No access token found", http.StatusUnauthorized)
 		return
 	}
-	log.Println(token)
 
 	BACKEND_URL := os.Getenv("BACKEND_URL")
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/api/profile", BACKEND_URL), nil)

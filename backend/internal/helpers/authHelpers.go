@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"errors"
-	"log"
 	"os"
 	"time"
 
@@ -110,7 +109,6 @@ func ExtractClaims(token string) (MyClaims, error) {
 	if err != nil {
 		return MyClaims{}, err
 	}
-	log.Println(claims)
 	return claims, nil
 }
 

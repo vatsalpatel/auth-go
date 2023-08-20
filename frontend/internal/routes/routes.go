@@ -8,6 +8,7 @@ import (
 
 func Configure(r *chi.Mux) {
 	r.Get("/", handlers.RootHandler)
+	r.Get("/login/google/success", handlers.GoogleLoginSuccessHandler)
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RedirectMiddleware)
