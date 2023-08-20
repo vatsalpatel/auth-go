@@ -225,9 +225,10 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:  "access_token",
-		Value: access_token,
-		Path:  "/",
+		Name:   "access_token",
+		Value:  access_token,
+		Path:   "/",
+		Domain: os.Getenv("COOKIE_DOMAIN"),
 	})
 	FRONTEND_URI := os.Getenv("FRONTEND_URI")
 	http.Redirect(w, r, FRONTEND_URI+"/profile", http.StatusFound)
