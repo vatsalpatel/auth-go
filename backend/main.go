@@ -36,7 +36,8 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	server := &http.Server{
-		Addr: ":" + PORT,
+		Addr:    ":" + PORT,
+		Handler: r,
 	}
 	go func() {
 		log.Println("Starting server")
