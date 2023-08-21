@@ -1,10 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"bitbucket.org/vatsal64/frontend/internal/routes"
 	"github.com/go-chi/chi"
@@ -23,7 +26,31 @@ func main() {
 	r.Use(middleware.Recoverer)
 	routes.Configure(r)
 
-	log.Println("Starting server")
 	PORT := os.Getenv("PORT")
-	http.ListenAndServe(fmt.Sprintf(":%v", PORT), r)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	server := &http.Server{
+		Addr: ":" + PORT,
+	}
+	go func() {
+		log.Println("Starting server")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			panic(err)
+		}
+	}()
+
+	// Wait for an interrupt signal.
+	<-quit
+	log.Println("Shutting down gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Shut down the HTTP server and any ongoing connections.
+	if err := server.Shutdown(ctx); err != nil {
+		log.Println("Server shutdown error:", err)
+	}
+
+	log.Println("Server gracefully stopped")
 }
