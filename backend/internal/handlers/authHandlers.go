@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"bitbucket.org/vatsal64/va_pa/config"
@@ -224,12 +223,18 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:   "access_token",
-		Value:  access_token,
-		Path:   "/",
-		Domain: os.Getenv("COOKIE_DOMAIN"),
-	})
-	FRONTEND_URI := os.Getenv("FRONTEND_URI")
-	http.Redirect(w, r, FRONTEND_URI+"/login/google/success", http.StatusFound)
+	// Normally there would be a redirect response with a set cookie header, but due to domain being in public suffix list
+	// I have opted for performing the exchange using javascript in another window
+	// So access_token is provided as response which will be passed to frontend which is the opener of this window, and this exchange window will be closed
+	w.Write([]byte(fmt.Sprintf(`<script>window.opener.postMessage('{"access_token": "%v"}', '*'); window.close();</script>`, access_token)))
+
+	// This is what it would look like normally
+	// http.SetCookie(w, &http.Cookie{
+	// 	Name:  "access_token",
+	// 	Value: access_token,
+	// 	Path:  "/",
+	// 	Domain: os.Getenv("COOKIE_DOMAIN"),
+	// })
+	// FRONTEND_URI := os.Getenv("FRONTEND_URI")
+	// http.Redirect(w, r, FRONTEND_URI+"/login/google/success", http.StatusFound)
 }

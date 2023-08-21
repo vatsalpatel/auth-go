@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <script defer>
+        function initiateLogin() {
+            let authWindow = window.open(
+                `/login/google`,
+                "_blank",
+            )
+            window.addEventListener("message", event => {
+                let data = JSON.parse(event.data)
+                let token = data.access_token
+                let expiry = new Date()
+                expiry.setTime(expiry.getTime() + 1000 * 60 * 60)
+                document.cookie = `access_token=${token};expires=${expiry.toUTCString()};path=/`
+                window.location = "/"
+            })
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -25,7 +41,7 @@
         </form>
     </div>
     <div class="container">
-        <a href="/login/google">Login with Google</a>
+        <a href="#" onclick="initiateLogin()">Login with Google</a>
     </div>
     <div class="container">
         <a href="/signup">Signup</a>
