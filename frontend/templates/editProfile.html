@@ -27,7 +27,7 @@
             {{end}}
             <div class="form-group">
                 <label for="phone">Phone:</label>
-                <input type="number" id="phone" name="phone" value="{{.Phone}}" required>
+                <input type="number" id="phone" name="phone" value="{{.Phone}}" min="1000000000" required>
             </div>
             <div class="form-group">
                 <button type="submit">Save & Continue</button>

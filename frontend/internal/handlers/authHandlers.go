@@ -123,7 +123,7 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("No access token found")
 		tmpl, _ := template.ParseFiles("templates/signup.html")
 		tmpl.Execute(w, map[string]interface{}{
-			"Error": "Invalid email or password",
+			"Error": "Email is already registered",
 		})
 		return
 	}
